@@ -1,0 +1,112 @@
+CREATE DOMAIN nombre AS
+varchar(80) NOT NULL;
+
+CREATE DOMAIN naturalnum AS
+INT CHECK(value > 0);
+
+CREATE DOMAIN semestreAcadem AS
+VARCHAR(6) CHECK(value LIKE '____-_');
+
+CREATE TYPE  rolJurado AS
+ENUM ('interno', 'externo');
+
+CREATE TYPE  nivelPrograma AS
+ENUM ('doctorado', 'maestria','diplomado');
+
+CREATE TABLE Persona (
+    PersonaID naturalnum PRIMARY KEY,
+    Nombres nombre,
+    Apellidos nombre
+);
+
+CREATE TABLE Departamento (
+    DepartamentoID naturalnum PRIMARY KEY,
+    NomFacultad nombre,
+    NombreDep nombre UNIQUE
+);
+
+CREATE TABLE Programa (
+    ProgramaID naturalnum PRIMARY KEY,
+    Nombre nombre UNIQUE,
+    Nivel nivelPrograma,
+    DepartamentoID naturalnum,
+    FOREIGN KEY (DepartamentoID) REFERENCES Departamento(DepartamentoID)
+);
+
+CREATE TABLE Estudiante (
+    EstudianteID naturalnum PRIMARY KEY,
+    Email VARCHAR(80) UNIQUE,
+    FechaInscrip DATE,
+    ProgramaID naturalnum,
+    FOREIGN KEY (ProgramaID) REFERENCES Programa(ProgramaID)
+);
+
+CREATE TABLE Curso (
+    CursoID naturalnum PRIMARY KEY,
+    Nombre nombre UNIQUE,
+    Creditos naturalnum
+);
+
+CREATE TABLE Semestre (
+    SemestreID semestreAcadem PRIMARY KEY,
+    FechaIni DATE,
+    FechaClau DATE
+);
+
+CREATE TABLE Matricula (
+    CursoID INT,
+    EstudianteID INT,
+    Semestre semestreAcadem,
+    PRIMARY KEY (CursoID, EstudianteID),
+    FOREIGN KEY (CursoID) REFERENCES Curso(CursoID),
+    FOREIGN KEY (EstudianteID) REFERENCES Estudiante(EstudianteID)
+);
+
+CREATE TABLE Contiene (
+    CursoID naturalNum,
+    ProgramaID naturalNum,
+    PRIMARY KEY (CursoID, ProgramaID),
+    FOREIGN KEY (CursoID) REFERENCES Curso(CursoID),
+    FOREIGN KEY (ProgramaID) REFERENCES Programa(ProgramaID)
+);
+
+CREATE TABLE Profesor (
+    ProfesorID naturalnum PRIMARY KEY,
+    Email VARCHAR(80) UNIQUE,
+    DepartamentoID naturalnum,
+    FOREIGN KEY (DepartamentoID) REFERENCES Departamento(DepartamentoID)
+);
+
+CREATE TABLE Dicta (
+    Semestre semestreAcadem,
+    CursoID naturalnum,
+    ProfesorID naturalnum,
+    PRIMARY KEY (Semestre, CursoID, ProfesorID),
+    FOREIGN KEY (Semestre) REFERENCES Semestre(SemestreID),
+    FOREIGN KEY (CursoID) REFERENCES Curso(CursoID),
+    FOREIGN KEY (ProfesorID) REFERENCES Profesor(ProfesorID)
+);
+
+CREATE TABLE Tesis (
+    TesisID naturalnum PRIMARY KEY,
+    Titulo VARCHAR(80) UNIQUE,
+    FechaIni DATE,
+    FechaDef DATE,
+    EstudianteID naturalnum,
+    AsesorID naturalnum,
+    FOREIGN KEY (EstudianteID) REFERENCES Estudiante(EstudianteID),
+    FOREIGN KEY (AsesorID) REFERENCES Profesor(ProfesorID)
+);
+
+CREATE TABLE Jurado (
+    JuradoID naturalnum PRIMARY KEY,
+    Rol rolJurado not null
+);
+
+CREATE TABLE Juzga (
+    JuradoID naturalnum,
+    TesisID  naturalnum,
+    PRIMARY KEY (JuradoID, TesisID),
+    FOREIGN KEY (JuradoID) REFERENCES Jurado(JuradoID),
+    FOREIGN KEY (TesisID) REFERENCES Tesis(TesisID)
+);
