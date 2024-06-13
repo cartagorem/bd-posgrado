@@ -237,5 +237,13 @@ INSERT INTO Persona (PersonaID, Nombres, Apellidos) VALUES
 (112, 'Ricardo', 'Luna'),
 (113, 'Carmen', 'Navarro'),
 (114, 'Omar', 'Paredes'),
-(115, 'Silvia', 'Casas');
-
+(115, 'Silvia', 'Casas'),
+(901, 'Ana', 'López'),
+(902, 'Juan', 'Martinez'),
+(903, 'Marta', 'Rivas'),
+(904, 'Lucas', 'Fernandez'),
+(905, 'Sofía', 'Guerra'),
+(906, 'Pablo', 'Rojas'),
+(907, 'Claudia', 'Bravo'),
+(908, 'Alejandro', 'Soto'),
+(909, 'Teresa', 'Molina');
