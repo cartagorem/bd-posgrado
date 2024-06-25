@@ -39,4 +39,4 @@ Luego podemos ejecutar alguno de los scripts (e.g. `eliminarCursos.py`, `inserta
 python3 eliminarCursos.py
 ```
 
-Nota: el script `config.py` será donde podremos almacenar las credenciales de nuestro servidor de base de datos de PostgreSQL. Solo es necesario editar _user_ definido en base de datos, _password_, nombre de _database_, _host_ si lo ejecuta de manera local y el puerto _port_.
+Nota: el script `config.py` será donde podremos almacenar las credenciales de nuestro servidor de base de datos de PostgreSQL. Solo es necesario editar _user_ definido en la base de datos, contraseña de la base de datos (_password_), nombre de la base de datos que se creó (_database_),  puerto y host están por default (_port_ y _host_).
