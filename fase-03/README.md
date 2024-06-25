@@ -19,5 +19,5 @@ CREATE DATABASE postgrado;
 Se ejecuta en `postgres` el siguiente comando:
 
 ```bash
-psql -U postgres -d postgrado -f ./escuela_postgrado.backup
+psql -U postgres -d postgrado -f ./escuelaposgrados.backup
 ```
