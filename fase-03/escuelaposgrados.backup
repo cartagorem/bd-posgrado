@@ -1,3 +1,5 @@
+-- dominios
+
 CREATE DOMAIN nombre AS
 varchar(80) NOT NULL;
 
@@ -7,11 +9,16 @@ INT CHECK(value > 0);
 CREATE DOMAIN semestreAcadem AS
 VARCHAR(6) CHECK(value LIKE '____-_');
 
+CREATE DOMAIN emailDom AS
+VARCHAR(80) CHECK(value LIKE '%@%.%' OR value LIKE '%@%.%.%');
+
 CREATE TYPE  rolJurado AS
 ENUM ('interno', 'externo');
 
 CREATE TYPE  nivelPrograma AS
 ENUM ('doctorado', 'maestria','diplomado');
+
+-- tablas
 
 CREATE TABLE Persona (
     PersonaID naturalnum PRIMARY KEY,
@@ -35,7 +42,7 @@ CREATE TABLE Programa (
 
 CREATE TABLE Estudiante (
     EstudianteID naturalnum PRIMARY KEY,
-    Email VARCHAR(80) UNIQUE,
+    Email emailDom UNIQUE,
     FechaInscrip DATE,
     ProgramaID naturalnum,
     FOREIGN KEY (ProgramaID) REFERENCES Programa(ProgramaID)
@@ -72,7 +79,7 @@ CREATE TABLE Contiene (
 
 CREATE TABLE Profesor (
     ProfesorID naturalnum PRIMARY KEY,
-    Email VARCHAR(80) UNIQUE,
+    Email emailDom UNIQUE,
     DepartamentoID naturalnum,
     FOREIGN KEY (DepartamentoID) REFERENCES Departamento(DepartamentoID)
 );
@@ -89,7 +96,7 @@ CREATE TABLE Dicta (
 
 CREATE TABLE Tesis (
     TesisID naturalnum PRIMARY KEY,
-    Titulo nombre NOT NULL,
+    Titulo nombre UNIQUE,
     FechaIni DATE,
     FechaDef DATE,
     EstudianteID naturalnum,
@@ -110,6 +117,8 @@ CREATE TABLE Juzga (
     FOREIGN KEY (JuradoID) REFERENCES Jurado(JuradoID),
     FOREIGN KEY (TesisID) REFERENCES Tesis(TesisID)
 );
+
+-- datos
 
 INSERT INTO Departamento (DepartamentoID, NombreDep, NomFacultad) VALUES
 (501, 'Departamento de Matematicas', 'Facultad de Ciencias'),
@@ -361,8 +370,47 @@ INSERT INTO Persona (PersonaID, Nombres, Apellidos) VALUES
 (908, 'Alejandro', 'Soto'),
 (909, 'Teresa', 'Molina');
 
+-- indices
+
 CREATE INDEX apellido_ind
 ON persona(apellidos);
 
 CREATE INDEX nombre_ind
 ON persona(nombres);
+
+-- vistas
+
+CREATE VIEW profesorAsesor AS
+SELECT personaid as profesorID,nombres, apellidos FROM persona
+WHERE personaid IN
+    (SELECT asesorid FROM tesis
+INTERSECT
+SELECT profesorid FROM profesor);
+
+
+
+CREATE VIEW EstudianteProgramaDespues2022 AS
+SELECT EstudianteID,Email,FechaInscrip,p.nombre as Programa
+FROM estudiante e
+JOIN Programa p ON e.programaID = p.programaID
+WHERE fechaInscrip > '2022-01-01';
+
+CREATE VIEW DetalleEstudiantePrograma2022 AS
+SELECT nombres,apellidos,ep.* FROM EstudianteProgramaDespues2022 ep
+JOIN Persona ON PersonaID = ep.EstudianteID;
+
+CREATE VIEW CursosSinDictar AS
+SELECT c.* FROM curso c
+NATURAL LEFT JOIN DICTA d
+WHERE d.semestre IS NULL;
+
+CREATE VIEW CursosDictados AS
+SELECT * FROM curso
+EXCEPT
+SELECT * FROM CursosSinDictar;
+
+CREATE VIEW ProfesoresFC AS
+SELECT ProfesorID,nombres,apellidos,email,nombredep FROM Profesor
+NATURAL JOIN Departamento
+JOIN Persona ON PersonaID = ProfesorID
+WHERE nomFacultad = 'Facultad de Ciencias';
