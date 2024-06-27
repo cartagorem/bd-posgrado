@@ -414,3 +414,198 @@ SELECT ProfesorID,nombres,apellidos,email,nombredep FROM Profesor
 NATURAL JOIN Departamento
 JOIN Persona ON PersonaID = ProfesorID
 WHERE nomFacultad = 'Facultad de Ciencias';
+
+-- funciones
+
+CREATE OR REPLACE FUNCTION ObtenerInformacionTesis2024()
+RETURNS TABLE(NombreEstudiante nombre, ApellidoEstudiante nombre, TituloTesis nombre, NombreProfesor nombre, ApellidoProfesor nombre) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        per.Nombres AS NombreEstudiante,
+        per.Apellidos AS ApellidoEstudiante,
+        t.Titulo AS TituloTesis,
+        profPer.Nombres AS NombreProfesor,
+        profPer.Apellidos AS ApellidoProfesor
+    FROM
+        Estudiante e
+        INNER JOIN Persona per ON e.EstudianteID = per.PersonaID
+        NATURAL JOIN Tesis t
+        INNER JOIN Profesor prof ON t.AsesorID = prof.ProfesorID
+        INNER JOIN Persona profPer ON prof.ProfesorID = profPer.PersonaID
+    WHERE
+        EXTRACT(YEAR FROM t.FechaDef) = 2024;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION ObtenerCursosProfesoresFisica()
+RETURNS TABLE(NombreProfesor nombre, ApellidoProfesor nombre, NombreCurso nombre, SemestreDictado semestreAcadem) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        p.Nombres AS NombreProfesor,
+        p.Apellidos AS ApellidoProfesor,
+        c.Nombre AS NombreCurso,
+        d.Semestre AS SemestreDictado
+    FROM
+        Profesor pr
+        JOIN Departamento dep ON pr.DepartamentoID = dep.DepartamentoID
+        JOIN Persona p ON pr.ProfesorID = p.PersonaID
+        LEFT JOIN Dicta d ON pr.ProfesorID = d.ProfesorID
+        LEFT JOIN Curso c ON d.CursoID = c.CursoID
+    WHERE
+        dep.NombreDep = 'Departamento de Fisica';
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION ObtenerEstudiantesProgramacion()
+RETURNS TABLE(NombreEstudiante nombre, ApellidoEstudiante nombre, SemestreInscrito semestreAcadem) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        p.Nombres AS NombreEstudiante,
+        p.Apellidos AS ApellidoEstudiante,
+        m.semestre AS SemestreInscrito
+    FROM
+        Estudiante e
+        INNER JOIN Persona p ON e.EstudianteID = p.PersonaID
+        INNER JOIN Matricula m ON e.EstudianteID = m.EstudianteID
+        INNER JOIN Curso c ON m.CursoID = c.CursoID
+    WHERE
+        c.Nombre = 'Fundamentos de Programacion';
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION ObtenerProfesoresPorSemestre2024()
+RETURNS TABLE(NombreProfesor nombre, ApellidoProfesor nombre, Semestre semestreAcadem) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        p.Nombres AS NombreProfesor,
+        p.Apellidos AS ApellidoProfesor,
+        s.SemestreID AS Semestre
+    FROM
+        Profesor pr
+        RIGHT JOIN Dicta d ON pr.ProfesorID = d.ProfesorID
+        RIGHT JOIN Semestre s ON d.Semestre = s.SemestreID
+        JOIN Persona p ON pr.ProfesorID = p.PersonaID
+    WHERE
+        s.SemestreID LIKE '2024-%';
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE PROCEDURE aMayus( INOUT string text)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+string := upper(string);
+END
+$$;
+
+-- insertar alumno
+CREATE OR REPLACE FUNCTION InsertarEstudiante(p_EstudianteID int, p_Email varchar, p_FechaInscrip date, p_ProgramaID int)
+RETURNS void AS $$
+BEGIN
+    INSERT INTO Estudiante (EstudianteID, Email, FechaInscrip, ProgramaID)
+    VALUES (p_EstudianteID, p_Email, p_FechaInscrip, p_ProgramaID);
+END;
+$$ LANGUAGE plpgsql;
+
+-- insertar curso
+CREATE OR REPLACE FUNCTION InsertarCurso(p_CursoID int, p_Nombre varchar, p_Creditos int)
+RETURNS void AS $$
+BEGIN
+    INSERT INTO Curso (CursoID, Nombre, Creditos)
+    VALUES (p_CursoID, p_Nombre, p_Creditos);
+END;
+$$ LANGUAGE plpgsql;
+
+-- insertar profesor
+CREATE OR REPLACE FUNCTION InsertarProfesor(p_ProfesorID int, p_DepartamentoID int,p_Email varchar)
+RETURNS void AS
+$$
+BEGIN
+	INSERT INTO profesor
+	VALUES ($1,$3,$2);
+END;
+$$ LANGUAGE plpgsql;
+
+-- actualizar email estudiante
+CREATE OR REPLACE FUNCTION ActualizarEmailEstudiante(p_EstudianteID int, p_nuevoEmail varchar)
+RETURNS void AS $$
+BEGIN
+    UPDATE Estudiante
+    SET Email = p_nuevoEmail
+    WHERE EstudianteID = p_EstudianteID;
+END;
+$$ LANGUAGE plpgsql;
+
+-- actualizar creditos de un curso
+CREATE OR REPLACE FUNCTION ActualizarCreditosCurso(p_CursoID int, p_nuevosCreditos int)
+RETURNS void AS $$
+BEGIN
+    UPDATE Curso
+    SET Creditos = p_nuevosCreditos
+    WHERE CursoID = p_CursoID;
+END;
+$$ LANGUAGE plpgsql;
+
+-- actualizar el departamento de un profesor
+
+CREATE OR REPLACE FUNCTION ActualizarDepartamentoProfesor(p_ProfesorID int, p_nuevoDepartamentoID int)
+RETURNS void AS $$
+BEGIN
+    UPDATE Profesor
+    SET DepartamentoID = p_nuevoDepartamentoID
+    WHERE ProfesorID = p_ProfesorID;
+END;
+$$ LANGUAGE plpgsql;
+
+-- eliminar estudiantes por programa y anho de inscripcion
+CREATE OR REPLACE FUNCTION EliminarEstudiantesPorPrograma(p_ProgramaID int, p_AnoInscripcion int)
+RETURNS void AS $$
+BEGIN
+    DELETE FROM Estudiante
+    WHERE ProgramaID = p_ProgramaID AND EXTRACT(YEAR FROM FechaInscrip) = p_AnoInscripcion;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Stored Procedure para actulizar creditos de un curso
+CREATE OR REPLACE PROCEDURE ActualizarCreditos(p_CursoID int, p_nuevosCreditos int)
+LANGUAGE plpgsql AS $$
+BEGIN
+    IF p_nuevosCreditos >= 1 THEN
+        UPDATE Curso SET Creditos = p_nuevosCreditos WHERE CursoID = p_CursoID;
+    ELSE
+        RAISE EXCEPTION 'Los créditos deben ser al menos 1.';
+    END IF;
+END;
+$$;
+
+-- trigger
+	-- tabla de registro de cambios
+CREATE TABLE LogCambioPrograma (
+    LogID serial PRIMARY KEY,
+    EstudianteID int,
+    ProgramaAntiguoID int,
+    ProgramaNuevoID int,
+    FechaCambio timestamp DEFAULT CURRENT_TIMESTAMP
+);
+	-- funcion que se ejecutara por el cambio de programa
+CREATE OR REPLACE FUNCTION fn_log_cambio_programa()
+RETURNS trigger AS $$
+BEGIN
+    IF NEW.ProgramaID <> OLD.ProgramaID THEN
+        INSERT INTO LogCambioPrograma(EstudianteID, ProgramaAntiguoID, ProgramaNuevoID)
+        VALUES (NEW.EstudianteID, OLD.ProgramaID, NEW.ProgramaID);
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+	-- trigger para el cambio de de programa
+CREATE TRIGGER trg_log_cambio_programa
+AFTER UPDATE OF ProgramaID ON Estudiante
+FOR EACH ROW
+EXECUTE FUNCTION fn_log_cambio_programa();
+
+
